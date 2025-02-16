@@ -36,7 +36,7 @@ const StockMatcher = () => {
     inventory: null
   });
 
-  const extractStorage = (normalized) => {
+  const extractStorage = (normalized: any) => {
     const patterns = [
         /(\d+)\s*gb/i,                    // Standard "GB" format
         /v2\s+(\d+)(?:\s|gb)/i,          // After "v2"
