@@ -24,8 +24,25 @@ const colorGroups = {
     red: ['red', 'burgundy', 'burgdy', 'brz']
 };
 
+// Define types
+type IngramRow = string[];
+type InventoryRow = string[];
+
+interface MatchResult {
+  product: string;
+  stockInfo: string;
+  matched: boolean;
+}
+
+interface StockInfo {
+  total: number;
+  a: number;
+  b: number;
+  likeNew: number;
+}
+
 const StockMatcher = () => {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<{
@@ -35,8 +52,9 @@ const StockMatcher = () => {
     ingram: null,
     inventory: null
   });
+  const [ingramWithStock, setIngramWithStock] = useState<Record<string, any>[]>([]);
 
-  const extractStorage = (normalized: any) => {
+  const extractStorage = (normalized: string): string => {
     const patterns = [
         /(\d+)\s*gb/i,                    // Standard "GB" format
         /v2\s+(\d+)(?:\s|gb)/i,          // After "v2"
@@ -58,7 +76,7 @@ const StockMatcher = () => {
     return '';
   };
 
-  const getModelAndStorage = (product) => {
+  const getModelAndStorage = (product: string): { model: string; storage: string } => {
     const normalized = product.toLowerCase()
       .replace(/\s+/g, ' ')
       .replace(/lte|4g/, '')
@@ -111,7 +129,7 @@ const StockMatcher = () => {
     return { model, storage };
   };
 
-  const findMatches = (ingramProduct, inventoryData) => {
+  const findMatches = (ingramProduct: string, inventoryData: InventoryRow[]): InventoryRow[] => {
     const { model, storage } = getModelAndStorage(ingramProduct);
     if (!model || !storage) return [];
 
@@ -135,12 +153,12 @@ const StockMatcher = () => {
     });
   };
 
-  const calculateStockInfo = (matches) => {
+  const calculateStockInfo = (matches: InventoryRow[]): string => {
     let total = 0, a = 0, b = 0, likeNew = 0;
     
     matches.forEach(match => {
       const qty = parseInt(match[1]) || 0;
-      const name = match[0].toLowerCase();
+      const name = (match[0] || '').toLowerCase();
       
       total += qty;
       if (name.includes('[grade a]')) a += qty;
@@ -160,6 +178,27 @@ const StockMatcher = () => {
     }
   };
 
+  const downloadEnhancedIngram = () => {
+    if (ingramWithStock.length === 0) {
+      setError('No data to download');
+      return;
+    }
+
+    try {
+      // Create a new workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(ingramWithStock);
+
+      // Add the worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+      // Generate the XLSX file
+      XLSX.writeFile(wb, 'ingram_with_stock_info.xlsx');
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
   const analyzeFiles = async () => {
     if (!files.ingram || !files.inventory) {
       setError('Please upload both files first');
@@ -174,34 +213,68 @@ const StockMatcher = () => {
       const ingramBuffer = await files.ingram.arrayBuffer();
       const ingramWorkbook = XLSX.read(new Uint8Array(ingramBuffer), {type: 'array'});
       const ingramSheet = ingramWorkbook.Sheets[ingramWorkbook.SheetNames[0]];
-      const ingramData = XLSX.utils.sheet_to_json(ingramSheet, {header: 1});
+      const ingramData = XLSX.utils.sheet_to_json<string[]>(ingramSheet, {header: 1});
 
       // Read Inventory file
       const inventoryBuffer = await files.inventory.arrayBuffer();
       const inventoryWorkbook = XLSX.read(new Uint8Array(inventoryBuffer), {type: 'array'});
       const inventorySheet = inventoryWorkbook.Sheets[inventoryWorkbook.SheetNames[0]];
-      const inventoryData = XLSX.utils.sheet_to_json(inventorySheet, {header: 1});
+      const inventoryData = XLSX.utils.sheet_to_json<string[]>(inventorySheet, {header: 1});
 
-      // Process each row
-      const processedResults = [];
+      // Process each row and prepare enhanced Ingram data
+      const processedResults: MatchResult[] = [];
+      const enhancedIngramData: (string | number)[][] = [];
+      
+      // Get headers from first row
+      const headers = ingramData[0] || [];
+      enhancedIngramData.push([...headers, 'Stock Info', 'Match Status']);
+
       for (let i = 1; i < ingramData.length; i++) {
-        const row = ingramData[i];
+        const row = ingramData[i] || [];
         const product = row[1];
         
-        if (!product) continue;
-        if (!product.toLowerCase().includes('samsung')) continue;
-        if (product.toLowerCase().match(/(watch|buds|galaxy book)/)) continue;
+        if (!product) {
+          enhancedIngramData.push([...row, '', 'No Product']);
+          continue;
+        }
+        
+        if (!product.toLowerCase().includes('samsung')) {
+          enhancedIngramData.push([...row, '', 'Not Samsung']);
+          continue;
+        }
+        
+        if (product.toLowerCase().match(/(watch|buds|galaxy book)/)) {
+          enhancedIngramData.push([...row, '', 'Not Phone']);
+          continue;
+        }
 
         const matches = findMatches(product, inventoryData);
+        const stockInfo = calculateStockInfo(matches);
+        const matchStatus = matches.length > 0 ? 'Matched' : 'No Match';
         
         processedResults.push({
           product,
-          stockInfo: calculateStockInfo(matches),
+          stockInfo,
           matched: matches.length > 0
         });
+
+        // Add the row to enhanced Ingram data with stock info
+        enhancedIngramData.push([...row, stockInfo, matchStatus]);
       }
       
       setResults(processedResults);
+      
+      // Convert the array data to format suitable for XLSX
+      const enhancedIngramForExcel = enhancedIngramData.slice(1).map(row => {
+        const obj: Record<string, any> = {};
+        const headerRow = enhancedIngramData[0] as string[];
+        headerRow.forEach((header, index) => {
+          obj[header] = row[index];
+        });
+        return obj;
+      });
+      
+      setIngramWithStock(enhancedIngramForExcel);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -234,13 +307,23 @@ const StockMatcher = () => {
           />
         </div>
 
-        <button
-          onClick={analyzeFiles}
-          disabled={!files.ingram || !files.inventory || loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Processing...' : 'Analyze Files'}
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={analyzeFiles}
+            disabled={!files.ingram || !files.inventory || loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Processing...' : 'Analyze Files'}
+          </button>
+
+          <button
+            onClick={downloadEnhancedIngram}
+            disabled={ingramWithStock.length === 0}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            Download Enhanced Ingram File
+          </button>
+        </div>
       </div>
 
       {error && (

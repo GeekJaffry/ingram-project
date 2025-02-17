@@ -1,4 +1,4 @@
-//working airpods
+//working before merge with amtcher
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
@@ -139,105 +139,16 @@ const App = () => {
     return '';
   };
 
-  // Add new function for flexible model matching (from StockMatcher)
-  const getFlexibleModelAndStorage = (product) => {
-    const normalized = product.toLowerCase()
-      .replace(/\s+/g, ' ')
-      .replace(/lte|4g/, '')
-      .trim();
-
-    // Storage extraction using existing extractStorage function
-    const storage = extractStorage(normalized);
-
-    // Model extraction
-    let model = '';
-
-    // A series with all variants
-    const aMatch = normalized.match(/\sa(\d+[a-z]*)(?:\s|$)/);
-    if (aMatch) {
-      const baseModel = aMatch[1];
-      const version = normalized.includes('v2') ? ' v2' : '';
-      const is5G = normalized.includes('5g') ? ' 5g' : '';
-      model = `galaxy a${baseModel}${version}${is5G}`;
-    }
-    // Z series with spacing fixes
-    else if (normalized.match(/z\s*(?:flip|fold)/i)) {
-      const typeMatch = normalized.match(/z\s*(flip|fold)\s*(\d+)/i);
-      if (typeMatch) {
-        const [_, type, num] = typeMatch;
-        const is5G = normalized.includes('5g') ? ' 5g' : '';
-        model = `galaxy z ${type} ${num}${is5G}`.toLowerCase();
-      }
-    }
-    // Note series
-    else if (normalized.match(/note\s*20/)) {
-      model = normalized.includes('ultra') ? 'galaxy note 20 ultra' : 'galaxy note 20';
-    }
-    // S series with all variants
-    else if (normalized.match(/(?:^|\s)s\d+/)) {
-      const numMatch = normalized.match(/(?:^|\s)s(\d+)/);
-      if (numMatch) {
-        const baseNumber = numMatch[1];
-        if (normalized.includes('ultra')) {
-          model = `galaxy s${baseNumber} ultra`;
-        } else if (normalized.includes('plus') || normalized.includes('+')) {
-          model = `galaxy s${baseNumber} plus`;
-        } else if (normalized.includes('fe')) {
-          model = `galaxy s${baseNumber} fe`;
-        } else {
-          model = `galaxy s${baseNumber}`;
-        }
-      }
-    }
-
-    return { model, storage };
-  };
-
-  const findFlexibleMatches = (ingramProduct, ocProductDescData, ocProductData) => {
-    const { model, storage } = getFlexibleModelAndStorage(ingramProduct);
-    if (!model || !storage) return [];
-
-    // Find matching products in oc_product_description
-    return ocProductDescData
-      .filter(descRow => {
-        if (!descRow.name) return false;
-        const descProduct = descRow.name.toLowerCase().trim();
-        
-        // Skip accessories
-        if (descProduct.includes('case') || 
-            descProduct.includes('cover') || 
-            descProduct.includes('protector') ||
-            descProduct.includes('pen') ||
-            descProduct.includes('stylus')) return false;
-
-        // Match model and storage
-        const hasModel = descProduct.includes(model.toLowerCase());
-        const hasStorage = descProduct.includes(storage + 'gb');
-        
-        return hasModel && hasStorage;
-      })
-      .map(descRow => {
-        // Find corresponding quantity in oc_product
-        const ocProduct = ocProductData.find(p => p.product_id === descRow.product_id);
-        return {
-          product_id: descRow.product_id,
-          name: descRow.name,
-          quantity: ocProduct ? parseInt(ocProduct.quantity) || 0 : 0
-        };
-      });
-  };
-
   // Process data when all files are uploaded
   const processData = () => {
     if (!ocProductData.length || !ingramData.length || !ocProductDescData.length) {
-      setResult(['Please upload all required files first.']);
+      alert('Please upload all required files first.');
       return;
     }
 
     const resultsArray = [];
     const ingramMatches = new Map();
     const matchedIngramIndices = new Set(); // Keep track of matched Ingram products
-    const ingramWithQuantities = []; // Initialize the array here
 
     // First find all matches for each OC model
     const modelMatches = new Map(); // model -> Map of storage -> Set of Ingram indices
@@ -340,7 +251,7 @@ const App = () => {
       });
     });
 
-    // Process model matches and count quantities
+    // Process matches and count quantities
     modelMatches.forEach((matchingIndices, key) => {
       console.log('Processing matches for:', key);
       const [model, storagePart] = key.split(' (');
@@ -395,24 +306,18 @@ const App = () => {
         // Only add results if we have quantities
         const totalQuantity = Object.values(gradeCounts).reduce((a, b) => a + b, 0);
         if (totalQuantity > 0) {
-          const displayString = `Name: ${key} | Match type: model, GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`;
+          const displayString = `Model: ${key} | GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`;
           resultsArray.push(displayString);
 
           // Store matches for each Ingram item
           Array.from(matchingIndices).forEach(index => {
             if (!ingramMatches.has(index)) {
-              ingramMatches.set(index, {
-                type: 'model',
-                matches: []
-              });
+              ingramMatches.set(index, []);
             }
-            
-            const match = ingramMatches.get(index);
-            match.matches.push({
-              key,
+            ingramMatches.get(index).push({
+              model: key,
               gradeCounts,
-              quantity: totalQuantity,
-              matchingProducts: `Model: ${key} | GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`
+              quantity: totalQuantity
             });
           });
         }
@@ -462,146 +367,57 @@ const App = () => {
         // Only add results if we have quantities
         const totalQuantity = Object.values(gradeCounts).reduce((a, b) => a + b, 0);
         if (totalQuantity > 0) {
-          const displayString = `Name: ${key} | Match type: name, GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`;
+          const displayString = `Name: ${key} | GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`;
           resultsArray.push(displayString);
 
           // Store matches for each Ingram item
           Array.from(matchingIndices).forEach(index => {
             if (!ingramMatches.has(index)) {
-              ingramMatches.set(index, {
-                type: 'name',
-                matches: []
-              });
+              ingramMatches.set(index, []);
             }
-            
-            const match = ingramMatches.get(index);
-            match.matches.push({
-              key,
+            ingramMatches.get(index).push({
+              model: key,
               gradeCounts,
-              quantity: totalQuantity,
-              matchingProducts: `Model: ${key} | GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`
+              quantity: totalQuantity
             });
           });
         }
       }
     });
 
-    // Third pass: Try flexible matching for unmatched Samsung products
-    ingramData.forEach((ingramItem, ingramIndex) => {
-      if (matchedIngramIndices.has(ingramIndex)) return; // Skip if already matched
-
-      const product = ingramItem.Product;
-      
-      // Skip if not Samsung or if it's a watch/buds/book
-      if (!product.toLowerCase().includes('samsung')) return;
-      if (product.toLowerCase().match(/(watch|buds|galaxy book)/)) return;
-
-      // Find matches using flexible matching
-      const matches = findFlexibleMatches(product, ocProductDescData, ocProductData);
-      
-      if (matches.length > 0) {
-        // Initialize grade counters
-        const gradeCounts = {
-          GB: 0,
-          GA: 0,
-          OB: 0,
-          LN: 0
-        };
-
-        // Count quantities by grade for all matches
-        matches.forEach(match => {
-          const quantity = match.quantity;
-          if (match.name.includes('[Brand New]')) {
-            gradeCounts.GB += quantity;
-          } else if (match.name.includes('[Open Box]')) {
-            gradeCounts.OB += quantity;
-          } else if (match.name.includes('[Like New]')) {
-            gradeCounts.LN += quantity;
-          } else if (match.name.includes('[Grade B]')) {
-            gradeCounts.GB += quantity;
-          } else {
-            const gradeMatch = match.name.match(/\[Grade\s*([A-C])\]/i);
-            if (gradeMatch && gradeMatch[1].toUpperCase() === 'A') {
-              gradeCounts.GA += quantity;
-            }
-          }
-        });
+    // Create enhanced Ingram data with quantities
+    const enhancedIngramData = ingramData.map((item, index) => {
+      const matches = ingramMatches.get(index);
+      let matchingProducts = '';
+      if (matches && matches.length > 0) {
+        // Only include matches with quantities
+        const matchesWithQuantities = matches.filter(match => 
+          Object.values(match.gradeCounts).reduce((a, b) => a + b, 0) > 0
+        );
         
-        const totalQuantity = Object.values(gradeCounts).reduce((a, b) => a + b, 0);
-        
-        if (totalQuantity > 0) {
-          // Use Ingram product name for display, but keep OC names for matching products
-          const matchingNames = matches.map(m => m.name).join(', ');
-          const displayString = `Name: ${product} | Match type: flexible, GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`;
-          resultsArray.push(displayString);
-
-          // Update ingram matches
-          ingramMatches.set(ingramIndex, {
-            type: 'flexible',
-            matches: [{
-              key: product,
-              gradeCounts,
-              quantity: totalQuantity,
-              matchingProducts: `Name: ${product} | OC: ${matchingNames} | GB:${gradeCounts.GB},GA:${gradeCounts.GA},OB:${gradeCounts.OB},LN:${gradeCounts.LN}`
-            }]
-          });
-          matchedIngramIndices.add(ingramIndex);
+        if (matchesWithQuantities.length > 0) {
+          matchingProducts = matchesWithQuantities.map(match => 
+            `Model: ${match.model} | GB:${match.gradeCounts.GB},GA:${match.gradeCounts.GA},OB:${match.gradeCounts.OB},LN:${match.gradeCounts.LN}`
+          ).join('\n');
         }
       }
-    });
-
-    // Create enhanced Ingram data with quantities
-    ingramData.forEach((item, index) => {
-      const match = ingramMatches.get(index);
-      if (!match) {
-        ingramWithQuantities.push({
-          ...item,
-          Quantity: 0,
-          'Match Type': '',
-          'Matching Products': '',
-          'Grade Counts': ''
-        });
-        return;
-      }
-
-      // Calculate total quantity across all matches
-      const totalQuantity = match.matches.reduce((sum, m) => sum + m.quantity, 0);
-      
-      // Combine all matching products
-      const matchingProducts = match.matches.map(m => m.matchingProducts).join('\n');
-      
-      // Combine all grade counts
-      const combinedGradeCounts = match.matches.reduce((total, m) => {
-        Object.entries(m.gradeCounts).forEach(([grade, count]) => {
-          total[grade] = (total[grade] || 0) + count;
-        });
-        return total;
-      }, { GB: 0, GA: 0, OB: 0, LN: 0 });
-
-      ingramWithQuantities.push({
+      return {
         ...item,
-        Quantity: totalQuantity,
-        'Match Type': match.type,
-        'Matching Products': matchingProducts,
-        'Grade Counts': `GB:${combinedGradeCounts.GB},GA:${combinedGradeCounts.GA},OB:${combinedGradeCounts.OB},LN:${combinedGradeCounts.LN}`
-      });
+        'Matching Products': matchingProducts
+      };
     });
 
+    setIngramWithQuantities(enhancedIngramData);
     setResult(resultsArray);
-    setIngramWithQuantities(ingramWithQuantities);
-    console.log('Processing complete');
   };
 
   const downloadEnhancedIngram = () => {
     if (ingramWithQuantities.length === 0) {
-      alert('No data to download. Please process files first.');
+      alert('No data to download. Please process the files first.');
       return;
     }
 
-    // Convert to CSV
     const csv = Papa.unparse(ingramWithQuantities);
-    
-    // Create blob and download
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -616,57 +432,11 @@ const App = () => {
   return (
     <Router>
       <div>
-      <nav style={{
-      backgroundColor: '#1a202c',
-      padding: '1rem',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '2rem'
-        }}>
-          <Link 
-            to="/" 
-            style={{
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              textDecoration: 'none',
-              backgroundColor: window.location.pathname === '/' ? '#4a5568' : 'transparent',
-              borderBottom: window.location.pathname === '/' ? '3px solid #60a5fa' : '3px solid transparent',
-              fontSize: '1.125rem',
-              fontWeight: '500',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            All Data Match
-          </Link>
-          <Link 
-            to="/inventory" 
-            style={{
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              textDecoration: 'none',
-              backgroundColor: window.location.pathname === '/inventory' ? '#4a5568' : 'transparent',
-              borderBottom: window.location.pathname === '/inventory' ? '3px solid #60a5fa' : '3px solid transparent',
-              fontSize: '1.125rem',
-              fontWeight: '500',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            Claude Code
-          </Link>
-        </div>
-      </div>
-    </nav>
+        <nav className="bg-gray-800 p-4">
+          <Link to="/" className="text-white mr-4">Home</Link>
+          <Link to="/inventory" className="text-white">Inventory</Link>
+        </nav>
+
         <Routes>
           <Route path="/" element={
             <div className="container mx-auto p-4">
