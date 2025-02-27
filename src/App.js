@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import StockMatcher from './StockMatcher.tsx';
 import LogicComponent from './Logic';
+import GptMatcher from './GptMatcher';
 
 // Original matcher component
 function OriginalMatcher() {
@@ -680,8 +681,24 @@ function App() {
                 transition: 'background-color 0.2s'
               }}
             >
-              New Logic Matcher
+              Ingram Matcher
             </Link>
+            <Link 
+  to="/gpt-matcher" 
+  style={{
+    color: 'white',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '0.5rem',
+    textDecoration: 'none',
+    backgroundColor: window.location.pathname === '/gpt-matcher' ? '#4a5568' : 'transparent',
+    borderBottom: window.location.pathname === '/gpt-matcher' ? '3px solid #60a5fa' : '3px solid transparent',
+    fontSize: '1.125rem',
+    fontWeight: '500',
+    transition: 'background-color 0.2s'
+  }}
+>
+  Likewise Matcher
+</Link>
           </div>
         </nav>
 
@@ -689,6 +706,7 @@ function App() {
           <Route path="/" element={<OriginalMatcher />} />
           <Route path="/inventory" element={<StockMatcher />} />
           <Route path="/logic" element={<LogicComponent />} />
+          <Route path="/gpt-matcher" element={<GptMatcher />} />
         </Routes>
       </div>
     </Router>
