@@ -41,7 +41,7 @@ function GptMatcher() {
     formData.append('likewise', files.likewise);
 
     try {
-      const response = await axios.post('http://localhost:8000/process', formData, {
+      const response = await axios.post('https://likewise-git-main-faizans-projects-6325c3cb.vercel.app/api/process', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -118,7 +118,7 @@ function GptMatcher() {
         {downloadReady && (
           <button
             onClick={() => {
-              window.location.href = 'http://localhost:8000/download/LW-Updated-ipads-with-rules.xlsx';
+              window.location.href = 'https://likewise-git-main-faizans-projects-6325c3cb.vercel.app/api/download/processed_results.xlsx';
             }}
             style={{
               padding: '0.75rem 1.5rem',
