@@ -611,26 +611,26 @@ const LogicComponent = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>New Logic Product Matcher</h2>
+      <h2>Ingram Product Matcher</h2>
       
       <div style={{ marginBottom: '20px' }}>
         <h3>Upload Files</h3>
         <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
           <div>
-            <label>OC Products (XLSX):</label>
+            <label>Phonebot Stock Xlsx:</label>
             <input
               type="file"
               accept=".xlsx"
-              onChange={(e) => handleFileUpload(e.target.files[0], 'ocProduct')}
+              onChange={(e) => handleFileUpload(e.target.files[0], 'Phonebot Stock Xlsx')}
               style={{ display: 'block', marginTop: '5px' }}
             />
           </div>
           <div>
-            <label>Ingram Micro (CSV/XLSX):</label>
+            <label>Ingram Micro (XLSX):</label>
             <input
               type="file"
               accept=".csv,.xlsx"
-              onChange={(e) => handleFileUpload(e.target.files[0], 'ingramMicro')}
+              onChange={(e) => handleFileUpload(e.target.files[0], 'Ingram xlsx')}
               style={{ display: 'block', marginTop: '5px' }}
             />
           </div>

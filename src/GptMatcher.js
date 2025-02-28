@@ -57,7 +57,7 @@ function GptMatcher() {
 
   return (
     <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '0 1rem' }}>
-      <h2>GPT-Powered Inventory Matcher</h2>
+      <h2>LikeWise (iPads) Matcher</h2>
       
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ marginBottom: '1rem' }}>
@@ -70,7 +70,7 @@ function GptMatcher() {
               style={{ marginBottom: '0.5rem' }}
             />
             <div style={{ fontSize: '0.875rem', color: '#666' }}>
-              {files.products ? `Selected: ${files.products.name}` : 'Upload PRODUCTS.xlsx'}
+              {files.products ? `Selected: ${files.products.name}` : 'Upload Phonebot Stock'}
             </div>
           </div>
           
@@ -82,7 +82,7 @@ function GptMatcher() {
               style={{ marginBottom: '0.5rem' }}
             />
             <div style={{ fontSize: '0.875rem', color: '#666' }}>
-              {files.likewise ? `Selected: ${files.likewise.name}` : 'Upload LIKEWISE.xlsx'}
+              {files.likewise ? `Selected: ${files.likewise.name}` : 'LikeWise Stock'}
             </div>
           </div>
         </div>
@@ -118,7 +118,7 @@ function GptMatcher() {
         {downloadReady && (
           <button
             onClick={() => {
-              window.location.href = 'https://likewise-git-main-faizans-projects-6325c3cb.vercel.app/api/download/processed_results.xlsx';
+              window.location.href = 'https://likewise-git-main-faizans-projects-6325c3cb.vercel.app/api/download/processed_results_ipads.xlsx';
             }}
             style={{
               padding: '0.75rem 1.5rem',

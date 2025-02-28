@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import StockMatcher from './StockMatcher.tsx';
 import LogicComponent from './Logic';
 import GptMatcher from './GptMatcher';
@@ -545,7 +545,7 @@ function OriginalMatcher() {
       <div style={{ marginBottom: '20px' }}>
         <h3>Required Files and Columns:</h3>
         <div style={{ marginBottom: '10px' }}>
-          <p><strong>1. OC Product XLSX</strong> (Required columns: Name, Product Id, Model, Qty)</p>
+          <p><strong>1. Phonebot Stock XLSX</strong> (Required columns: Name, Product Id, Model, Qty)</p>
           <input
             type="file"
             accept=".xlsx"
@@ -555,7 +555,7 @@ function OriginalMatcher() {
         </div>
 
         <div style={{ marginBottom: '10px' }}>
-          <p><strong>2. Ingram Micro CSV</strong> (Required columns: Product)</p>
+          <p><strong>2. Ingram Micro File</strong> (Required columns: Product)</p>
           <input
             type="file"
             accept=".csv"
@@ -638,6 +638,7 @@ function App() {
             <Link 
               to="/" 
               style={{
+                display: 'none',  
                 color: 'white',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '0.5rem',
@@ -654,6 +655,7 @@ function App() {
             <Link 
               to="/inventory" 
               style={{
+                display: 'none',  
                 color: 'white',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '0.5rem',
@@ -684,26 +686,26 @@ function App() {
               Ingram Matcher
             </Link>
             <Link 
-  to="/gpt-matcher" 
-  style={{
-    color: 'white',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '0.5rem',
-    textDecoration: 'none',
-    backgroundColor: window.location.pathname === '/gpt-matcher' ? '#4a5568' : 'transparent',
-    borderBottom: window.location.pathname === '/gpt-matcher' ? '3px solid #60a5fa' : '3px solid transparent',
-    fontSize: '1.125rem',
-    fontWeight: '500',
-    transition: 'background-color 0.2s'
-  }}
->
-  Likewise Matcher
-</Link>
+              to="/gpt-matcher" 
+              style={{
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '0.5rem',
+                textDecoration: 'none',
+                backgroundColor: window.location.pathname === '/gpt-matcher' ? '#4a5568' : 'transparent',
+                borderBottom: window.location.pathname === '/gpt-matcher' ? '3px solid #60a5fa' : '3px solid transparent',
+                fontSize: '1.125rem',
+                fontWeight: '500',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              Likewise (iPads)
+            </Link>
           </div>
         </nav>
 
         <Routes>
-          <Route path="/" element={<OriginalMatcher />} />
+          <Route path="/" element={<Navigate to="/logic" />} />
           <Route path="/inventory" element={<StockMatcher />} />
           <Route path="/logic" element={<LogicComponent />} />
           <Route path="/gpt-matcher" element={<GptMatcher />} />
