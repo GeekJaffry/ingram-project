@@ -210,11 +210,23 @@ const processModelMatches = (ocProducts, ingramData) => {
       // Check if model exists in product name, handling /DS suffix for Samsung models
       //COMMENT OUT BECAUSE NEED APPROVAL
       const modelStr = String(model);
-      const withoutDsORDsn = modelStr.replace(/\/DSN?$/, '');
-      const modelExists = cleanedProduct.includes(modelStr) || 
-        (modelStr.startsWith('SM-') && cleanedProduct.includes(modelStr + '/DS')) || 
-        (modelStr.startsWith('SM-') && cleanedProduct.includes(modelStr + '/DSN')) ||
-        (modelStr.startsWith('SM-') && modelStr !== withoutDsORDsn && cleanedProduct.includes(withoutDsORDsn));
+      let modelExists;
+
+      if (/^samsung\s+/i.test(cleanedProduct)) {
+        // Strict matching for Samsung products
+        const hasDsOrDsn = modelStr.endsWith('/DS') || modelStr.endsWith('/DSN');
+        const ingramModelMatch = cleanedProduct.match(/SM-[A-Z0-9]+(?:\/(?:DS|DSN))?/);
+        const ingramModelStr = ingramModelMatch ? ingramModelMatch[0] : '';
+        const ingramHasDsOrDsn = ingramModelStr.endsWith('/DS') || ingramModelStr.endsWith('/DSN');
+        
+        // Only match if both have or both don't have DS/DSN suffix
+        modelExists = (hasDsOrDsn === ingramHasDsOrDsn) && 
+          (modelStr === ingramModelStr || 
+           (hasDsOrDsn && modelStr.replace(/\/DSN?$/, '') === ingramModelStr.replace(/\/DSN?$/, '')));
+      } else {
+        // Original matching logic for non-Samsung products
+        modelExists = cleanedProduct.includes(modelStr);
+      }
       
       if (modelExists) {
         storageMap.forEach((data, storageKey) => {
@@ -465,7 +477,7 @@ const LogicComponent = () => {
   const handleFileUpload = (file, type) => {
     if (!file) return;
 
-    if (type === 'ocProduct') {
+    if (type === 'Phonebot Stock Xlsx') {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -482,7 +494,7 @@ const LogicComponent = () => {
         }
       };
       reader.readAsArrayBuffer(file);
-    } else if (type === 'ingramMicro') {
+    } else if (type === 'Ingram xlsx') {
       const reader = new FileReader();
       const fileExtension = file.name.split('.').pop().toLowerCase();
       
