@@ -2,11 +2,17 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 
+// API URL based on environment
+const API_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:8000'
+  : 'https://likewise-git-main-faizans-projects-6325c3cb.vercel.app';
+
 function GptMatcher() {
   const [files, setFiles] = useState({
     products: null,
     likewise: null
   });
+  const [sheetType, setSheetType] = useState('iPad');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -39,9 +45,10 @@ function GptMatcher() {
     const formData = new FormData();
     formData.append('products', files.products);
     formData.append('likewise', files.likewise);
+    formData.append('sheet_type', sheetType);
 
     try {
-      const response = await axios.post('https://likewise-git-main-faizans-projects-6325c3cb.vercel.app/api/process', formData, {
+      const response = await axios.post(`${API_URL}/api/process`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -49,7 +56,7 @@ function GptMatcher() {
       setResult(response.data);
       setDownloadReady(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during processing');
+      setError(err.response?.data?.detail || 'An error occurred during processing');
     } finally {
       setProcessing(false);
     }
@@ -57,10 +64,37 @@ function GptMatcher() {
 
   return (
     <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '0 1rem' }}>
-      <h2>LikeWise (iPads) Matcher</h2>
+      <h2>LikeWise Product Matcher</h2>
       
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ marginBottom: '1rem' }}>
+          <h3>Select Product Type</h3>
+          <div style={{ 
+            marginBottom: '1rem',
+            display: 'flex',
+            gap: '1rem',
+            alignItems: 'center'
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="radio"
+                value="iPad"
+                checked={sheetType === 'iPad'}
+                onChange={(e) => setSheetType(e.target.value)}
+              />
+              iPad
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="radio"
+                value="iPhone"
+                checked={sheetType === 'iPhone'}
+                onChange={(e) => setSheetType(e.target.value)}
+              />
+              iPhone
+            </label>
+          </div>
+
           <h3>Upload Files</h3>
           <div style={{ marginBottom: '1rem' }}>
             <input
@@ -118,7 +152,8 @@ function GptMatcher() {
         {downloadReady && (
           <button
             onClick={() => {
-              window.location.href = 'https://likewise-git-main-faizans-projects-6325c3cb.vercel.app/api/download/processed_results_ipads.xlsx';
+              const filename = `processed_results_${sheetType.toLowerCase()}s.xlsx`;
+              window.location.href = `${API_URL}/api/download/${filename}`;
             }}
             style={{
               padding: '0.75rem 1.5rem',

@@ -683,7 +683,7 @@ function App() {
                 transition: 'background-color 0.2s'
               }}
             >
-              Ingram Matcher
+              Ingram
             </Link>
             <Link 
               to="/gpt-matcher" 
@@ -699,7 +699,7 @@ function App() {
                 transition: 'background-color 0.2s'
               }}
             >
-              Likewise (iPads)
+              Likewise
             </Link>
           </div>
         </nav>
