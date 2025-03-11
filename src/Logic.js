@@ -210,6 +210,7 @@ const processModelMatches = (ocProducts, ingramData) => {
       // Check if model exists in product name, handling /DS suffix for Samsung models
       //COMMENT OUT BECAUSE NEED APPROVAL
       const modelStr = String(model);
+      /* strict model matching with DS and DSN
       let modelExists;
 
       if (/^samsung\s+/i.test(cleanedProduct)) {
@@ -226,7 +227,12 @@ const processModelMatches = (ocProducts, ingramData) => {
       } else {
         // Original matching logic for non-Samsung products
         modelExists = cleanedProduct.includes(modelStr);
-      }
+      }*/
+        const withoutDsORDsn = modelStr.replace(/\/DSN?$/, '');
+        const modelExists = cleanedProduct.includes(modelStr) || 
+          (modelStr.startsWith('SM-') && cleanedProduct.includes(modelStr + '/DS')) || 
+          (modelStr.startsWith('SM-') && cleanedProduct.includes(modelStr + '/DSN')) ||
+          (modelStr.startsWith('SM-') && modelStr !== withoutDsORDsn && cleanedProduct.includes(withoutDsORDsn));
       
       if (modelExists) {
         storageMap.forEach((data, storageKey) => {
