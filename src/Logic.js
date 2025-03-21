@@ -49,7 +49,15 @@ const extractStorage = (name) => {
       isMultiple: false
     };
   }
-
+  // Check for common storage values (128, 256, 512) without GB/TB unit
+  const commonStorageMatch = name.match(/\s(64|128|256|512)\s/);
+  if (commonStorageMatch) {
+    return {
+      size: parseInt(commonStorageMatch[1]),
+      unit: "GB", // Assume GB for these common values
+      isMultiple: false
+    };
+  }
   return null;
 };
 
@@ -228,6 +236,7 @@ const processModelMatches = (ocProducts, ingramData) => {
         // Original matching logic for non-Samsung products
         modelExists = cleanedProduct.includes(modelStr);
       }*/
+
         const withoutDsORDsn = modelStr.replace(/\/DSN?$/, '');
         const modelExists = cleanedProduct.includes(modelStr) || 
           (modelStr.startsWith('SM-') && cleanedProduct.includes(modelStr + '/DS')) || 
@@ -235,6 +244,9 @@ const processModelMatches = (ocProducts, ingramData) => {
           (modelStr.startsWith('SM-') && modelStr !== withoutDsORDsn && cleanedProduct.includes(withoutDsORDsn));
       
       if (modelExists) {
+        if(modelStr.startsWith('SM-')){
+          console.log('Model match:', model, cleanedProduct);
+        }
         storageMap.forEach((data, storageKey) => {
           let storageMatches = false;
 
